@@ -305,7 +305,8 @@ class MainWindow(QMainWindow):
         main_layout.addWidget(splitter, 1)
 
         self.progress_bar = QProgressBar()
-        self.progress_bar.setVisible(False)
+        self.progress_bar.setValue(0)
+        self.progress_bar.setFormat("%v/%m 页")
         main_layout.addWidget(self.progress_bar)
 
         self.status_bar = QStatusBar()
@@ -520,7 +521,7 @@ class MainWindow(QMainWindow):
         self.current_output_path = self.current_docx_path
 
         self.convert_btn.setEnabled(False)
-        self.progress_bar.setVisible(True)
+        # self.progress_bar.setVisible(True)
         self.progress_bar.setValue(0)
         self.status_bar.showMessage("正在转换PDF...")
 
@@ -536,7 +537,7 @@ class MainWindow(QMainWindow):
             self.status_bar.showMessage(f"正在转换: {current}/{total} 页")
 
     def on_convert_finished(self, success: bool, message: str):
-        self.progress_bar.setVisible(False)
+        # self.progress_bar.setVisible(False)
         self.convert_btn.setEnabled(True)
 
         if success:

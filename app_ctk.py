@@ -1,6 +1,6 @@
 """
-PDF转Word工具 - CustomTkinter版
-使用CustomTkinter实现现代化UI，体积更小
+PDF转Word工具 - CTK版 (CustomTkinter UI)
+使用PyMuPDF进行PDF文本提取，CustomTkinter现代化界面
 """
 
 import os
@@ -16,6 +16,7 @@ import fitz  # PyMuPDF
 from docx import Document
 import customtkinter as ctk
 from tkinter import filedialog, messagebox
+from tkinter import ttk
 
 # 设置主题
 ctk.set_appearance_mode("System")
@@ -25,7 +26,7 @@ ctk.set_default_color_theme("blue")
 # ==================== PDF转换模块 ====================
 
 class PDFConverter:
-    """PDF转Word转换器"""
+    """PDF转Word转换器（使用PyMuPDF）"""
 
     def __init__(self):
         self.cancelled = False
@@ -68,7 +69,6 @@ class PDFConverter:
             pdf.close()
             doc.save(output_path)
             return True
-
         except Exception as e:
             raise RuntimeError(f"PDF转换失败: {str(e)}")
 
@@ -239,9 +239,10 @@ class PDFToolApp(ctk.CTk):
         self.current_output_path = ""
         self.current_matches: List[MatchResult] = []
         self.current_previews: List[ReplacementPreview] = []
+        self.selected_indices: set = set()
 
         # 窗口设置
-        self.title("PDF转Word工具 - 敏感词替换")
+        self.title("PDF转Word工具 - 敏感词替换 (CTK版)")
         self.geometry("1100x750")
         self.minsize(900, 600)
 
@@ -284,11 +285,16 @@ class PDFToolApp(ctk.CTk):
         self.convert_btn = ctk.CTkButton(convert_row, text="转换PDF为Word", width=150, command=self.convert_pdf)
         self.convert_btn.pack(anchor="center")
 
-        # 进度条
-        self.progress_bar = ctk.CTkProgressBar(self.main_frame)
-        self.progress_bar.pack(fill="x", pady=(0, 10))
+        # 进度条区域
+        progress_frame = ctk.CTkFrame(self.main_frame, fg_color="transparent")
+        progress_frame.pack(fill="x", pady=(0, 10))
+
+        self.progress_bar = ctk.CTkProgressBar(progress_frame)
+        self.progress_bar.pack(fill="x", side="left", expand=True)
         self.progress_bar.set(0)
-        self.progress_bar.pack_forget()
+
+        self.progress_label = ctk.CTkLabel(progress_frame, text="", width=100)
+        self.progress_label.pack(side="right", padx=(10, 0))
 
         # === 搜索替换区域 ===
         self.search_frame = ctk.CTkFrame(self.main_frame)
@@ -333,11 +339,11 @@ class PDFToolApp(ctk.CTk):
         self.preview_btn = ctk.CTkButton(btn_row, text="预览替换", width=80, command=self.preview_replacements, state="disabled")
         self.preview_btn.pack(side="left", padx=(0, 10))
 
-        self.replace_selected_btn = ctk.CTkButton(btn_row, text="替换选中项", width=100, command=self.replace_selected, state="disabled")
-        self.replace_selected_btn.pack(side="left", padx=(0, 10))
-
-        self.replace_all_btn = ctk.CTkButton(btn_row, text="替换全部", width=100, command=self.replace_all, state="disabled")
+        self.replace_all_btn = ctk.CTkButton(btn_row, text="替换选中项", width=100, command=self.replace_selected, state="disabled")
         self.replace_all_btn.pack(side="left", padx=(0, 10))
+
+        self.replace_all_btn2 = ctk.CTkButton(btn_row, text="替换全部", width=100, command=self.replace_all, state="disabled")
+        self.replace_all_btn2.pack(side="left", padx=(0, 10))
 
         self.save_btn = ctk.CTkButton(btn_row, text="保存文档", width=100, command=self.save_document, state="disabled")
         self.save_btn.pack(side="left")
@@ -348,7 +354,7 @@ class PDFToolApp(ctk.CTk):
 
         ctk.CTkLabel(batch_frame, text="批量替换列表（每行一个：搜索词=替换词）:").pack(anchor="w", padx=10, pady=(10, 5))
 
-        self.batch_text = ctk.CTkTextbox(batch_frame, height=80)
+        self.batch_text = ctk.CTkTextbox(batch_frame, height=60)
         self.batch_text.pack(fill="x", padx=10, pady=(0, 10))
         self.batch_text.insert("1.0", "张三=***\n电话=联系方式\n身份证=证件号码")
 
@@ -363,9 +369,37 @@ class PDFToolApp(ctk.CTk):
         self.result_label = ctk.CTkLabel(right_frame, text="共找到 0 处匹配")
         self.result_label.pack(anchor="w", padx=10, pady=10)
 
-        # 结果表格（使用Textbox模拟）
-        self.result_text = ctk.CTkTextbox(right_frame)
-        self.result_text.pack(fill="both", expand=True, padx=10, pady=(0, 10))
+        # 表格容器
+        table_container = ctk.CTkFrame(right_frame)
+        table_container.pack(fill="both", expand=True, padx=10, pady=(0, 10))
+
+        # 创建Treeview表格
+        columns = ("select", "location", "match", "replace", "context")
+        self.result_tree = ttk.Treeview(table_container, columns=columns, show="headings", height=15)
+        
+        # 设置列标题
+        self.result_tree.heading("select", text="选择")
+        self.result_tree.heading("location", text="位置")
+        self.result_tree.heading("match", text="匹配文本")
+        self.result_tree.heading("replace", text="替换为")
+        self.result_tree.heading("context", text="上下文")
+        
+        # 设置列宽
+        self.result_tree.column("select", width=50, anchor="center")
+        self.result_tree.column("location", width=120, anchor="center")
+        self.result_tree.column("match", width=120, anchor="center")
+        self.result_tree.column("replace", width=120, anchor="center")
+        self.result_tree.column("context", width=200, anchor="w")
+        
+        # 添加滚动条
+        scrollbar = ttk.Scrollbar(table_container, orient="vertical", command=self.result_tree.yview)
+        self.result_tree.configure(yscrollcommand=scrollbar.set)
+        
+        self.result_tree.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        # 绑定点击事件
+        self.result_tree.bind("<Button-1>", self.on_tree_click)
 
         # 全选/取消按钮
         select_row = ctk.CTkFrame(right_frame, fg_color="transparent")
@@ -380,6 +414,22 @@ class PDFToolApp(ctk.CTk):
         # 状态栏
         self.status_label = ctk.CTkLabel(self, text="就绪", anchor="w")
         self.status_label.pack(fill="x", padx=10, pady=(0, 5))
+
+    def on_tree_click(self, event):
+        """处理表格点击事件"""
+        region = self.result_tree.identify("region", event.x, event.y)
+        if region == "cell":
+            column = self.result_tree.identify_column(event.x)
+            if column == "#1":  # 选择列
+                item = self.result_tree.identify_row(event.y)
+                if item:
+                    idx = int(item)
+                    if idx in self.selected_indices:
+                        self.selected_indices.discard(idx)
+                        self.result_tree.set(item, "select", "☐")
+                    else:
+                        self.selected_indices.add(idx)
+                        self.result_tree.set(item, "select", "☑")
 
     def browse_pdf(self):
         file_path = filedialog.askopenfilename(title="选择PDF文件", filetypes=[("PDF文件", "*.pdf"), ("所有文件", "*.*")])
@@ -411,14 +461,15 @@ class PDFToolApp(ctk.CTk):
         self.current_output_path = self.current_docx_path
 
         self.convert_btn.configure(state="disabled")
-        self.progress_bar.pack(fill="x", pady=(0, 10))
+        self.progress_bar.set(0)
+        self.progress_label.configure(text="0/0 页")
         self.status_label.configure(text="正在转换PDF...")
 
         def do_convert():
             try:
                 def progress_callback(current, total):
-                    self.after(0, lambda: self.progress_bar.set(current / total if total > 0 else 0))
-                    self.after(0, lambda: self.status_label.configure(text=f"正在转换: {current}/{total} 页"))
+                    # 使用after确保在主线程更新UI
+                    self.after(0, lambda: self.update_progress(current, total))
 
                 success = self.pdf_converter.convert(self.current_pdf_path, self.current_docx_path, progress_callback)
                 self.after(0, lambda: self.on_convert_finished(success, "转换完成" if success else "转换已取消"))
@@ -427,11 +478,20 @@ class PDFToolApp(ctk.CTk):
 
         threading.Thread(target=do_convert, daemon=True).start()
 
+    def update_progress(self, current: int, total: int):
+        """更新进度条"""
+        if total > 0:
+            progress = current / total
+            self.progress_bar.set(progress)
+            self.progress_label.configure(text=f"{current}/{total} 页")
+            self.status_label.configure(text=f"正在转换: {current}/{total} 页")
+
     def on_convert_finished(self, success: bool, message: str):
-        self.progress_bar.pack_forget()
         self.convert_btn.configure(state="normal")
 
         if success:
+            self.progress_bar.set(1.0)
+            self.progress_label.configure(text="完成")
             self.status_label.configure(text=f"转换完成: {self.current_docx_path}")
             try:
                 self.search_engine.load_document(self.current_docx_path)
@@ -463,9 +523,8 @@ class PDFToolApp(ctk.CTk):
             whole_word=self.whole_word_var.get()
         )
 
-        self.update_result_display()
+        self.update_result_table()
         self.preview_btn.configure(state="normal" if self.current_matches else "disabled")
-        self.replace_all_btn.configure(state="normal" if self.current_matches else "disabled")
         self.result_label.configure(text=f"共找到 {len(self.current_matches)} 处匹配")
         self.status_label.configure(text=f"搜索完成，找到 {len(self.current_matches)} 处匹配")
 
@@ -487,47 +546,81 @@ class PDFToolApp(ctk.CTk):
             whole_word=self.whole_word_var.get()
         )
 
-        self.update_preview_display()
-        self.replace_selected_btn.configure(state="normal" if self.current_previews else "disabled")
+        self.update_preview_table()
         self.replace_all_btn.configure(state="normal" if self.current_previews else "disabled")
+        self.replace_all_btn2.configure(state="normal" if self.current_previews else "disabled")
         self.result_label.configure(text=f"共 {len(self.current_previews)} 处可替换")
 
-    def update_result_display(self):
-        self.result_text.delete("1.0", "end")
-        self.result_text.insert("end", "搜索结果:\n\n")
+    def update_result_table(self):
+        """更新搜索结果表格"""
+        # 清空表格
+        for item in self.result_tree.get_children():
+            self.result_tree.delete(item)
+        
+        self.selected_indices.clear()
+        
         for i, match in enumerate(self.current_matches):
-            self.result_text.insert("end", f"[{i+1}] {match.location}\n")
-            self.result_text.insert("end", f"    匹配: {match.match_text}\n")
-            self.result_text.insert("end", f"    上下文: {match.context}\n\n")
+            self.selected_indices.add(i)
+            self.result_tree.insert("", "end", iid=str(i), values=(
+                "☑",
+                match.location,
+                match.match_text,
+                "",
+                match.context
+            ))
 
-    def update_preview_display(self):
-        self.result_text.delete("1.0", "end")
-        self.result_text.insert("end", "替换预览:\n\n")
+    def update_preview_table(self):
+        """更新预览表格"""
+        # 清空表格
+        for item in self.result_tree.get_children():
+            self.result_tree.delete(item)
+        
+        self.selected_indices.clear()
+        
         for i, preview in enumerate(self.current_previews):
-            self.result_text.insert("end", f"[{i+1}] {preview.match.location}\n")
-            self.result_text.insert("end", f"    匹配: {preview.match.match_text} → {preview.replacement}\n")
-            self.result_text.insert("end", f"    上下文: {preview.match.context}\n\n")
+            self.selected_indices.add(i)
+            self.result_tree.insert("", "end", iid=str(i), values=(
+                "☑",
+                preview.match.location,
+                preview.match.match_text,
+                preview.replacement,
+                preview.match.context
+            ))
 
     def select_all(self):
-        pass  # 简化版本，实际选择逻辑需要更复杂的实现
+        """全选"""
+        for item in self.result_tree.get_children():
+            idx = int(item)
+            self.selected_indices.add(idx)
+            self.result_tree.set(item, "select", "☑")
 
     def deselect_all(self):
-        pass
+        """取消全选"""
+        self.selected_indices.clear()
+        for item in self.result_tree.get_children():
+            self.result_tree.set(item, "select", "☐")
 
     def replace_selected(self):
+        """替换选中项"""
         if not self.current_previews:
+            return
+        
+        selected = list(self.selected_indices)
+        if not selected:
+            messagebox.showwarning("警告", "请选择要替换的内容！")
             return
 
         keyword = self.search_entry.get().strip()
         replacement = self.replace_entry.get()
 
-        if messagebox.askyesno("确认替换", f"确定要替换全部 {len(self.current_previews)} 处内容吗？"):
-            self.do_replace(keyword, replacement, None)
+        if messagebox.askyesno("确认替换", f"确定要替换选中的 {len(selected)} 处内容吗？"):
+            self.do_replace(keyword, replacement, selected)
 
     def replace_all(self):
+        """替换全部"""
         if not self.current_previews:
             return
-
+        
         keyword = self.search_entry.get().strip()
         replacement = self.replace_entry.get()
 
