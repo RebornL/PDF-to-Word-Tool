@@ -4,7 +4,7 @@
 # PDF处理（保留格式）
 pdf2docx>=0.5.6
 
-# ===== 轻量版/CTK版依赖 =====
+# ===== CTK版依赖 =====
 # PDF文本提取
 pymupdf>=1.23.0
 
@@ -13,8 +13,7 @@ pymupdf>=1.23.0
 python-docx>=0.8.11
 
 # GUI相关
-PyQt5>=5.15.0          # 完整版/轻量版
-customtkinter>=5.2.0   # CTK版
+customtkinter>=5.2.0
 
 # 打包工具
 pyinstaller>=5.0.0

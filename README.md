@@ -13,19 +13,17 @@
 
 ## 版本说明
 
-本工具提供三个版本：
+本工具提供两个版本：
 
 | 版本 | 文件名 | 大小 | PDF引擎 | 说明 |
 |------|--------|------|---------|------|
 | **CTK版** | `PDF转Word工具_CTK版.exe` | 53MB | PyMuPDF | 现代UI，体积最小 |
 | **完整版** | `PDF转Word工具_完整版.exe` | 95MB | pdf2docx | 保留PDF排版格式 |
-| **轻量版** | `PDF转Word工具_轻量版.exe` | 79MB | PyMuPDF | PyQt5界面 |
 
 ### 如何选择？
 
 - **完整版**: PDF包含表格、图片、复杂排版 → 选择完整版（保留格式最佳）
 - **CTK版**: 推荐！体积最小，现代化界面，适合纯文本PDF
-- **轻量版**: PyQt5界面，纯文本PDF
 
 ## 使用方法
 
@@ -43,14 +41,15 @@
    - **区分大小写**: 精确匹配大小写
    - **全词匹配**: 仅匹配完整单词
 3. 点击 **搜索** 按钮
-4. 搜索结果将显示在右侧区域
+4. 搜索结果将显示在右侧表格中
 
 ### 3. 替换关键词
 
 **替换单个关键词:**
 1. 在 **替换为** 输入框中输入替换后的文本
 2. 点击 **预览替换** 查看替换效果
-3. 点击 **替换全部** 执行替换
+3. 在表格中勾选要替换的项
+4. 点击 **替换选中项** 或 **替换全部**
 
 **批量替换多个关键词:**
 1. 在 **批量替换列表** 中输入规则（每行一个）
@@ -75,9 +74,6 @@ pip install -r requirements.txt
 # 运行完整版（保留格式）
 python app.py
 
-# 运行轻量版（纯文本）
-python app_lite.py
-
 # 运行CTK版（最小体积）
 python app_ctk.py
 ```
@@ -93,11 +89,6 @@ pyinstaller --noconfirm --onefile --windowed \
   --name "PDF转Word工具_完整版" \
   --collect-all pdf2docx --collect-all pypdfium2 \
   app.py
-
-# 打包轻量版 (79MB) - PyQt5界面
-pyinstaller --noconfirm --onefile --windowed \
-  --name "PDF转Word工具_轻量版" \
-  app_lite.py
 
 # 打包CTK版 (53MB) - 最小体积
 pyinstaller --noconfirm --onefile --windowed \
@@ -115,7 +106,6 @@ pyinstaller --noconfirm --onefile --windowed \
 | 版本 | PDF引擎 | UI框架 | 主要依赖 |
 |------|---------|--------|----------|
 | 完整版 | pdf2docx | CustomTkinter | OpenCV, NumPy, PyMuPDF |
-| 轻量版 | PyMuPDF | PyQt5 | PyMuPDF |
 | CTK版 | PyMuPDF | CustomTkinter | PyMuPDF |
 
 ## 项目结构
@@ -123,7 +113,6 @@ pyinstaller --noconfirm --onefile --windowed \
 ```
 PdfToWordWithoutSensitive/
 ├── app.py              # 完整版源码 (pdf2docx + CustomTkinter)
-├── app_lite.py         # 轻量版源码 (PyMuPDF + PyQt5)
 ├── app_ctk.py          # CTK版源码 (PyMuPDF + CustomTkinter)
 ├── src/                # 模块化源码
 │   ├── pdf_converter.py
@@ -133,14 +122,13 @@ PdfToWordWithoutSensitive/
 ├── README.md           # 说明文档
 └── dist/               # 打包输出
     ├── PDF转Word工具_完整版.exe
-    ├── PDF转Word工具_轻量版.exe
     └── PDF转Word工具_CTK版.exe
 ```
 
 ## 注意事项
 
 1. 完整版使用pdf2docx，能较好保留PDF排版格式
-2. CTK版/轻量版使用PyMuPDF，仅提取纯文本
+2. CTK版使用PyMuPDF，仅提取纯文本
 3. 建议在替换前先预览确认
 4. 替换后请及时保存文档
 
