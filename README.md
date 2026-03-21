@@ -4,7 +4,7 @@
 
 ## 功能特性
 
-- **PDF转Word**: 将PDF文件转换为Word文档(.docx)格式，保留基本排版
+- **PDF转Word**: 将PDF文件转换为Word文档(.docx)格式
 - **敏感词替换**: 在转换后的文档中搜索并替换指定关键词
 - **批量替换**: 支持多组关键词批量替换
 - **预览确认**: 替换前可预览效果，支持选择性替换
@@ -13,6 +13,20 @@
 ## 界面预览
 
 ![工具界面截图](screenshot.png)
+
+## 版本说明
+
+本工具提供两个版本：
+
+| 版本 | 文件名 | 大小 | 说明 |
+|------|--------|------|------|
+| **完整版** | `PDF转Word工具_完整版.exe` | 120MB | 保留PDF排版格式，适合复杂文档 |
+| **轻量版** | `PDF转Word工具_轻量版.exe` | 79MB | 纯文本提取，体积小启动快 |
+
+### 如何选择？
+
+- **完整版**: PDF包含表格、图片、复杂排版 → 选择完整版
+- **轻量版**: 纯文本PDF、仅需提取文字 → 选择轻量版
 
 ## 使用方法
 
@@ -54,57 +68,52 @@
 
 点击 **保存文档** 按钮，选择保存位置即可。
 
-## 运行方式
-
-### 方式一：直接运行可执行文件
-
-双击 `dist/PDF转Word工具.exe` 即可运行（无需安装Python）
-
-### 方式二：从源码运行
+## 从源码运行
 
 ```bash
 # 安装依赖
 pip install -r requirements.txt
 
-# 运行程序
-python src/main.py
+# 运行完整版
+python app.py
+
+# 或运行轻量版
+python app_lite.py
 ```
 
 ## 打包说明
-
-如需重新打包可执行文件：
 
 ```bash
 # 安装打包工具
 pip install pyinstaller
 
-# 执行打包
+# 打包完整版 (120MB)
 pyinstaller --noconfirm --onefile --windowed \
-  --name "PDF转Word工具" \
-  --collect-all pdf2docx \
-  --collect-all pdfplumber \
-  --collect-all pypdfium2 \
-  --collect-all cryptography \
+  --name "PDF转Word工具_完整版" \
+  --collect-all pdf2docx --collect-all pypdfium2 \
   app.py
-```
 
-打包后的文件位于 `dist/PDF转Word工具.exe`
+# 打包轻量版 (79MB)
+pyinstaller --noconfirm --onefile --windowed \
+  --name "PDF转Word工具_轻量版" \
+  app_lite.py
+```
 
 ## 系统要求
 
 - 操作系统: Windows 10/11 (64位)
-- 无需安装Python环境（可执行文件版本）
+- 无需安装Python环境
 
-## 依赖库
+## 技术栈
 
-- PyQt5 - 图形界面
-- pdf2docx - PDF转Word
-- pdfplumber - PDF文本提取
-- python-docx - Word文档操作
+| 版本 | PDF引擎 | 依赖 |
+|------|---------|------|
+| 完整版 | pdf2docx | OpenCV, NumPy, PyMuPDF |
+| 轻量版 | PyMuPDF | PyMuPDF |
 
 ## 注意事项
 
-1. PDF转换效果取决于原PDF的复杂程度，复杂排版可能无法完美保留
+1. PDF转换效果取决于原PDF的复杂程度
 2. 建议在替换前先预览确认
 3. 替换后请及时保存文档
 
