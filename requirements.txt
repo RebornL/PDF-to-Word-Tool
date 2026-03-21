@@ -1,0 +1,13 @@
+# PDF转Word工具依赖
+
+# PDF处理（保留格式，不需要OpenSSL）
+pdf2docx>=0.5.6
+
+# Word文档处理
+python-docx>=0.8.11
+
+# GUI相关
+PyQt5>=5.15.0
+
+# 打包工具
+pyinstaller>=5.0.0
