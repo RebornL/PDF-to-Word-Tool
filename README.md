@@ -4,26 +4,13 @@
 
 ## 功能特性
 
-- **PDF转Word**: 将PDF文件转换为Word文档(.docx)格式
+- **PDF转Word**: 将PDF文件转换为Word文档(.docx)格式，保留原PDF排版格式
 - **敏感词替换**: 在转换后的文档中搜索并替换指定关键词
 - **批量替换**: 支持多组关键词批量替换
 - **预览确认**: 替换前可预览效果，支持选择性替换
 - **匹配选项**: 支持区分大小写、全词匹配
 - **现代UI**: 使用CustomTkinter实现现代化界面
-
-## 版本说明
-
-本工具提供两个版本：
-
-| 版本 | 文件名 | 大小 | PDF引擎 | 说明 |
-|------|--------|------|---------|------|
-| **CTK版** | `PDF转Word工具_CTK版.exe` | 53MB | PyMuPDF | 现代UI，体积最小 |
-| **完整版** | `PDF转Word工具_完整版.exe` | 95MB | pdf2docx | 保留PDF排版格式 |
-
-### 如何选择？
-
-- **完整版**: PDF包含表格、图片、复杂排版 → 选择完整版（保留格式最佳）
-- **CTK版**: 推荐！体积最小，现代化界面，适合纯文本PDF
+- **实时进度**: 转换过程中显示实时进度条
 
 ## 使用方法
 
@@ -32,7 +19,7 @@
 1. 点击 **浏览** 按钮选择要转换的PDF文件
 2. 选择输出目录（默认与PDF同目录）
 3. 点击 **转换PDF为Word** 按钮
-4. 等待转换完成
+4. 等待转换完成（进度条实时显示进度）
 
 ### 2. 搜索关键词
 
@@ -71,30 +58,41 @@
 # 安装依赖
 pip install -r requirements.txt
 
-# 运行完整版（保留格式）
+# 运行程序
 python app.py
-
-# 运行CTK版（最小体积）
-python app_ctk.py
 ```
 
 ## 打包说明
+
+### 使用PyInstaller打包
 
 ```bash
 # 安装打包工具
 pip install pyinstaller
 
-# 打包完整版 (95MB) - 保留格式
+# 打包 (约95MB)
 pyinstaller --noconfirm --onefile --windowed \
   --name "PDF转Word工具_完整版" \
   --collect-all pdf2docx --collect-all pypdfium2 \
   app.py
-
-# 打包CTK版 (53MB) - 最小体积
-pyinstaller --noconfirm --onefile --windowed \
-  --name "PDF转Word工具_CTK版" \
-  app_ctk.py
 ```
+
+### 使用Nuitka打包（实验性）
+
+```bash
+# 安装Nuitka
+pip install nuitka
+
+# 打包 (约71MB)
+python -m nuitka --standalone --onefile --windows-console-mode=disable \
+  --enable-plugin=tk-inter \
+  --include-data-dir=tcl8.6=tk/tcl8.6 \
+  --include-data-dir=tk8.6=tk/tk8.6 \
+  --output-filename="PDF转Word工具_完整版_Nuitka.exe" \
+  app.py
+```
+
+**注意**: Nuitka打包目前可能与Python 3.13存在兼容性问题，建议使用PyInstaller。
 
 ## 系统要求
 
@@ -103,34 +101,33 @@ pyinstaller --noconfirm --onefile --windowed \
 
 ## 技术栈
 
-| 版本 | PDF引擎 | UI框架 | 主要依赖 |
-|------|---------|--------|----------|
-| 完整版 | pdf2docx | CustomTkinter | OpenCV, NumPy, PyMuPDF |
-| CTK版 | PyMuPDF | CustomTkinter | PyMuPDF |
+| 组件 | 技术 |
+|------|------|
+| PDF引擎 | pdf2docx (保留格式) |
+| UI框架 | CustomTkinter |
+| Word处理 | python-docx |
+| 打包工具 | PyInstaller / Nuitka |
 
 ## 项目结构
 
 ```
 PdfToWordWithoutSensitive/
-├── app.py              # 完整版源码 (pdf2docx + CustomTkinter)
-├── app_ctk.py          # CTK版源码 (PyMuPDF + CustomTkinter)
-├── src/                # 模块化源码
-│   ├── pdf_converter.py
-│   ├── search_replace.py
-│   └── gui.py
-├── requirements.txt    # 依赖列表
-├── README.md           # 说明文档
-└── dist/               # 打包输出
-    ├── PDF转Word工具_完整版.exe
-    └── PDF转Word工具_CTK版.exe
+├── app.py                  # 主程序源码
+├── src/                    # 模块化源码
+│   ├── pdf_converter.py    # PDF转换模块
+│   ├── search_replace.py   # 搜索替换模块
+│   └── gui.py              # GUI模块
+├── requirements.txt        # 依赖列表
+├── README.md               # 说明文档
+└── dist/                   # 打包输出
+    └── PDF转Word工具_完整版.exe
 ```
 
 ## 注意事项
 
-1. 完整版使用pdf2docx，能较好保留PDF排版格式
-2. CTK版使用PyMuPDF，仅提取纯文本
-3. 建议在替换前先预览确认
-4. 替换后请及时保存文档
+1. 使用pdf2docx引擎，能较好保留PDF排版格式（表格、图片、排版）
+2. 建议在替换前先预览确认
+3. 替换后请及时保存文档
 
 ## 许可证
 
