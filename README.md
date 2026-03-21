@@ -77,23 +77,6 @@ pyinstaller --noconfirm --onefile --windowed \
   app.py
 ```
 
-### 使用Nuitka打包（实验性）
-
-```bash
-# 安装Nuitka
-pip install nuitka
-
-# 打包 (约71MB)
-python -m nuitka --standalone --onefile --windows-console-mode=disable \
-  --enable-plugin=tk-inter \
-  --include-data-dir=tcl8.6=tk/tcl8.6 \
-  --include-data-dir=tk8.6=tk/tk8.6 \
-  --output-filename="PDF转Word工具_完整版_Nuitka.exe" \
-  app.py
-```
-
-**注意**: Nuitka打包目前可能与Python 3.13存在兼容性问题，建议使用PyInstaller。
-
 ## 系统要求
 
 - 操作系统: Windows 10/11 (64位)
@@ -106,7 +89,7 @@ python -m nuitka --standalone --onefile --windows-console-mode=disable \
 | PDF引擎 | pdf2docx (保留格式) |
 | UI框架 | CustomTkinter |
 | Word处理 | python-docx |
-| 打包工具 | PyInstaller / Nuitka |
+| 打包工具 | PyInstaller |
 
 ## 项目结构
 
