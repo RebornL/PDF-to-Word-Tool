@@ -9,14 +9,10 @@ import re
 from typing import Optional, List, Dict, Tuple, Callable
 from dataclasses import dataclass
 
-# ==================== PDF转换模块（轻量版）====================
+# ==================== 核心依赖 ====================
 
-try:
-    import fitz  # PyMuPDF
-    from docx import Document
-    HAS_PYMUPDF = True
-except ImportError:
-    HAS_PYMUPDF = False
+import fitz  # PyMuPDF
+from docx import Document
 
 
 class PDFConverter:
@@ -40,10 +36,7 @@ class PDFConverter:
         if output_dir and not os.path.exists(output_dir):
             os.makedirs(output_dir)
 
-        if HAS_PYMUPDF:
-            return self._convert_with_pymupdf(pdf_path, output_path, progress_callback)
-        else:
-            raise RuntimeError("请安装 PyMuPDF: pip install pymupdf")
+        return self._convert_with_pymupdf(pdf_path, output_path, progress_callback)
 
     def _convert_with_pymupdf(self, pdf_path: str, output_path: str, progress_callback=None) -> bool:
         try:
@@ -82,15 +75,13 @@ class PDFConverter:
 
     @staticmethod
     def get_page_count(pdf_path: str) -> int:
-        if HAS_PYMUPDF:
-            try:
-                pdf = fitz.open(pdf_path)
-                count = len(pdf)
-                pdf.close()
-                return count
-            except:
-                pass
-        return 0
+        try:
+            pdf = fitz.open(pdf_path)
+            count = len(pdf)
+            pdf.close()
+            return count
+        except:
+            return 0
 
 
 # ==================== 搜索替换模块 ====================
