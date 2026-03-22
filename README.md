@@ -66,16 +66,19 @@ python app.py
 
 ### 使用PyInstaller打包
 
+**推荐方式 (约77MB):**
+
 ```bash
-# 安装打包工具
 pip install pyinstaller
 
-# 打包 (约95MB)
-pyinstaller --noconfirm --onefile --windowed \
-  --name "PDF转Word工具_完整版" \
-  --collect-all pdf2docx --collect-all pypdfium2 \
-  app.py
+pyinstaller --noconfirm --clean "PDF转Word工具.spec"
 ```
+
+优化措施：
+- 排除 OpenCV 视频IO模块 (PDF转换不需要)
+- 排除 OpenCV 人脸检测模型
+- 排除不需要的 Python 标准库模块
+- 启用字节码优化
 
 ## 系统要求
 
@@ -95,15 +98,16 @@ pyinstaller --noconfirm --onefile --windowed \
 
 ```
 PdfToWordWithoutSensitive/
-├── app.py                  # 主程序源码
-├── src/                    # 模块化源码
-│   ├── pdf_converter.py    # PDF转换模块
-│   ├── search_replace.py   # 搜索替换模块
-│   └── gui.py              # GUI模块
-├── requirements.txt        # 依赖列表
-├── README.md               # 说明文档
-└── dist/                   # 打包输出
-    └── PDF转Word工具_完整版.exe
+├── app.py                        # 主程序源码
+├── src/                          # 模块化源码
+│   ├── pdf_converter.py          # PDF转换模块
+│   ├── search_replace.py         # 搜索替换模块
+│   └── gui.py                    # GUI模块
+├── PDF转Word工具.spec             # 打包配置文件
+├── requirements.txt              # 依赖列表
+├── README.md                     # 说明文档
+└── dist/                         # 打包输出
+    └── PDF转Word工具.exe          # 约77MB
 ```
 
 ## 注意事项
