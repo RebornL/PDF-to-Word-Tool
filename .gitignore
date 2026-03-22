@@ -21,7 +21,7 @@ wheels/
 *.egg
 
 # PyInstaller
-*.spec
+# *.spec  # 已注释，允许提交PDF转Word工具.spec
 build/
 dist/
 

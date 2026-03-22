@@ -12,6 +12,10 @@
 - **现代UI**: 使用CustomTkinter实现现代化界面
 - **实时进度**: 转换过程中显示实时进度条
 
+## 软件界面
+
+![PDF转Word工具界面](screenshot.png)
+
 ## 使用方法
 
 ### 1. 转换PDF为Word
