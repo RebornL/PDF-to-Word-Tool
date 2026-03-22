@@ -23,13 +23,50 @@ ctk.set_appearance_mode("System")
 ctk.set_default_color_theme("blue")
 
 
+# ==================== 转换参数配置 ====================
+
+class ConversionSettings:
+    """PDF转换参数配置"""
+
+    def __init__(self):
+        # 图片定位相关参数
+        self.float_image_ignorable_gap = 3.0  # 浮动图片识别阈值（降低以识别更多浮动图片）
+        self.clip_image_res_ratio = 3.0       # 图片裁剪分辨率比例
+
+        # 向量图形参数
+        self.min_svg_gap_dx = 15.0            # 向量图形水平合并间距
+        self.min_svg_gap_dy = 2.0             # 向量图形垂直合并间距
+
+        # 页面边距因子
+        self.page_margin_factor_top = 0.5     # 页面上边距因子
+        self.page_margin_factor_bottom = 0.5  # 页面下边距因子
+
+        # 其他参数
+        self.line_overlap_threshold = 0.9     # 行重叠阈值
+        self.shape_min_dimension = 2.0        # 忽略小于此值的形状
+
+    def to_dict(self) -> dict:
+        """转换为字典供 Converter 使用"""
+        return {
+            'float_image_ignorable_gap': self.float_image_ignorable_gap,
+            'clip_image_res_ratio': self.clip_image_res_ratio,
+            'min_svg_gap_dx': self.min_svg_gap_dx,
+            'min_svg_gap_dy': self.min_svg_gap_dy,
+            'page_margin_factor_top': self.page_margin_factor_top,
+            'page_margin_factor_bottom': self.page_margin_factor_bottom,
+            'line_overlap_threshold': self.line_overlap_threshold,
+            'shape_min_dimension': self.shape_min_dimension,
+        }
+
+
 # ==================== PDF转换模块 ====================
 
 class PDFConverter:
     """PDF转Word转换器（使用pdf2docx保留格式）"""
 
-    def __init__(self):
+    def __init__(self, settings: ConversionSettings = None):
         self.cancelled = False
+        self.settings = settings or ConversionSettings()
 
     def convert(self, pdf_path: str, output_path: str, progress_callback=None) -> bool:
         self.cancelled = False
@@ -54,7 +91,8 @@ class PDFConverter:
                 if self.cancelled:
                     raise InterruptedError("转换已取消")
 
-            cv.convert(output_path, progress=internal_progress)
+            # 使用自定义参数进行转换
+            cv.convert(output_path, progress=internal_progress, **self.settings.to_dict())
             cv.close()
             return True
         except InterruptedError:
@@ -222,7 +260,8 @@ class PDFToolApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.pdf_converter = PDFConverter()
+        self.settings = ConversionSettings()
+        self.pdf_converter = PDFConverter(self.settings)
         self.search_engine = SearchReplaceEngine()
         self.current_pdf_path = ""
         self.current_docx_path = ""
@@ -233,8 +272,8 @@ class PDFToolApp(ctk.CTk):
 
         # 窗口设置
         self.title("PDF转Word工具 - 敏感词替换 (完整版)")
-        self.geometry("1100x750")
-        self.minsize(900, 600)
+        self.geometry("1100x850")
+        self.minsize(900, 700)
 
         # 创建UI
         self.create_widgets()
@@ -273,7 +312,11 @@ class PDFToolApp(ctk.CTk):
         convert_row.pack(fill="x", padx=10, pady=(0, 10))
 
         self.convert_btn = ctk.CTkButton(convert_row, text="转换PDF为Word", width=150, command=self.convert_pdf)
-        self.convert_btn.pack(anchor="center")
+        self.convert_btn.pack(side="left", padx=(0, 20))
+
+        # 设置按钮
+        self.settings_btn = ctk.CTkButton(convert_row, text="高级设置", width=100, command=self.show_settings_dialog)
+        self.settings_btn.pack(side="left")
 
         # 进度条区域
         progress_frame = ctk.CTkFrame(self.main_frame, fg_color="transparent")
@@ -691,6 +734,99 @@ class PDFToolApp(ctk.CTk):
                 messagebox.showinfo("保存成功", f"文档已成功保存！\n\n保存位置: {file_path}")
             except Exception as e:
                 messagebox.showwarning("保存失败", str(e))
+
+    def show_settings_dialog(self):
+        """显示高级设置对话框"""
+        dialog = ctk.CTkToplevel(self)
+        dialog.title("转换参数设置")
+        dialog.geometry("500x400")
+        dialog.transient(self)
+        dialog.grab_set()
+
+        # 主容器
+        main_frame = ctk.CTkFrame(dialog)
+        main_frame.pack(fill="both", expand=True, padx=10, pady=10)
+
+        # 图片定位参数
+        image_frame = ctk.CTkFrame(main_frame)
+        image_frame.pack(fill="x", pady=(0, 10))
+
+        ctk.CTkLabel(image_frame, text="图片定位参数", font=("", 14, "bold")).pack(anchor="w", padx=10, pady=(10, 5))
+
+        # 浮动图片识别阈值
+        float_frame = ctk.CTkFrame(image_frame, fg_color="transparent")
+        float_frame.pack(fill="x", padx=10, pady=5)
+        ctk.CTkLabel(float_frame, text="浮动图片识别阈值:", width=150).pack(side="left")
+        self.float_gap_var = ctk.StringVar(value=str(self.settings.float_image_ignorable_gap))
+        float_entry = ctk.CTkEntry(float_frame, textvariable=self.float_gap_var, width=100)
+        float_entry.pack(side="left", padx=(10, 0))
+        ctk.CTkLabel(float_frame, text="(越小越易识别浮动图片)", text_color="gray").pack(side="left", padx=(10, 0))
+
+        # 图片分辨率比例
+        res_frame = ctk.CTkFrame(image_frame, fg_color="transparent")
+        res_frame.pack(fill="x", padx=10, pady=5)
+        ctk.CTkLabel(res_frame, text="图片分辨率比例:", width=150).pack(side="left")
+        self.res_ratio_var = ctk.StringVar(value=str(self.settings.clip_image_res_ratio))
+        res_entry = ctk.CTkEntry(res_frame, textvariable=self.res_ratio_var, width=100)
+        res_entry.pack(side="left", padx=(10, 0))
+        ctk.CTkLabel(res_frame, text="(影响图片清晰度)", text_color="gray").pack(side="left", padx=(10, 0))
+
+        # 页面边距参数
+        margin_frame = ctk.CTkFrame(main_frame)
+        margin_frame.pack(fill="x", pady=(0, 10))
+
+        ctk.CTkLabel(margin_frame, text="页面边距参数", font=("", 14, "bold")).pack(anchor="w", padx=10, pady=(10, 5))
+
+        # 上边距因子
+        top_frame = ctk.CTkFrame(margin_frame, fg_color="transparent")
+        top_frame.pack(fill="x", padx=10, pady=5)
+        ctk.CTkLabel(top_frame, text="上边距因子:", width=150).pack(side="left")
+        self.top_margin_var = ctk.StringVar(value=str(self.settings.page_margin_factor_top))
+        ctk.CTkEntry(top_frame, textvariable=self.top_margin_var, width=100).pack(side="left", padx=(10, 0))
+
+        # 下边距因子
+        bottom_frame = ctk.CTkFrame(margin_frame, fg_color="transparent")
+        bottom_frame.pack(fill="x", padx=10, pady=5)
+        ctk.CTkLabel(bottom_frame, text="下边距因子:", width=150).pack(side="left")
+        self.bottom_margin_var = ctk.StringVar(value=str(self.settings.page_margin_factor_bottom))
+        ctk.CTkEntry(bottom_frame, textvariable=self.bottom_margin_var, width=100).pack(side="left", padx=(10, 0))
+
+        # 说明文字
+        info_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
+        info_frame.pack(fill="x", pady=10)
+        info_text = """说明:
+• 浮动图片识别阈值: 控制图片是否使用绝对定位，值越小识别越敏感
+• 图片分辨率比例: 影响转换后图片的质量，值越大越清晰但文件越大
+• 页面边距因子: 调整页边距，影响整体布局位置"""
+        ctk.CTkLabel(info_frame, text=info_text, justify="left", text_color="gray").pack(anchor="w", padx=10)
+
+        # 按钮
+        btn_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
+        btn_frame.pack(fill="x", pady=10)
+
+        def apply_settings():
+            try:
+                self.settings.float_image_ignorable_gap = float(self.float_gap_var.get())
+                self.settings.clip_image_res_ratio = float(self.res_ratio_var.get())
+                self.settings.page_margin_factor_top = float(self.top_margin_var.get())
+                self.settings.page_margin_factor_bottom = float(self.bottom_margin_var.get())
+                # 更新转换器设置
+                self.pdf_converter.settings = self.settings
+                messagebox.showinfo("设置已保存", "参数已更新，将在下次转换时生效。")
+                dialog.destroy()
+            except ValueError:
+                messagebox.showerror("错误", "请输入有效的数字！")
+
+        def reset_settings():
+            self.settings = ConversionSettings()
+            self.float_gap_var.set(str(self.settings.float_image_ignorable_gap))
+            self.res_ratio_var.set(str(self.settings.clip_image_res_ratio))
+            self.top_margin_var.set(str(self.settings.page_margin_factor_top))
+            self.bottom_margin_var.set(str(self.settings.page_margin_factor_bottom))
+
+        ctk.CTkButton(btn_frame, text="应用", width=80, command=apply_settings).pack(side="left", padx=(10, 10))
+        ctk.CTkButton(btn_frame, text="恢复默认", width=80, command=reset_settings).pack(side="left", padx=10)
+        ctk.CTkButton(btn_frame, text="取消", width=80, command=dialog.destroy).pack(side="right", padx=10)
 
 
 def main():
